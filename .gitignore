@@ -1,0 +1,25 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.env
+.venv/
+venv/
+*.log
+.DS_Store
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Claude Code harness session state - not project source.
+.claude/
+
+# Personal save-state (per §11/§6.2/§6.4 of BUSINESS_REQUIREMENTS.md) - not source data.
+data/owned_characters.json
+data/used_pairs.json
+
+# Scraped game art (character portraits, weather icons) - copyrighted game assets, not ours to
+# redistribute publicly. Regenerate locally via scripts/scrape_characters.py and
+# scripts/download_weather_icons.py (see README). Structured gameplay data in data/*.csv is kept
+# committed - only the image assets are excluded.
+assets/characters/
+assets/weather/
