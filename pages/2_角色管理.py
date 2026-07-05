@@ -1,15 +1,13 @@
 import streamlit as st
 
-from utils.loader import (
-    get_avatar_path,
-    load_buff_connections,
-    load_characters,
-    load_master_roster,
-    load_owned_characters,
-    save_owned_characters,
-)
+from utils.auth import require_login
+from utils.db import load_owned_characters, save_owned_characters
+from utils.loader import get_avatar_path, load_buff_connections, load_characters, load_master_roster
 
 st.set_page_config(page_title="角色管理", page_icon="👥", layout="wide")
+
+user_id = require_login()
+
 st.title("👥 角色管理")
 st.caption("勾选你已拥有的角色，更改会自动保存。")
 st.page_link("app.py", label="返回首页", icon="🏠")
@@ -19,7 +17,7 @@ characters_df = load_characters()
 roster = load_master_roster(buff_df, characters_df)
 
 if "owned" not in st.session_state:
-    st.session_state.owned = load_owned_characters()
+    st.session_state.owned = load_owned_characters(user_id)
 
 
 def _widget_key(name: str) -> str:
@@ -31,22 +29,24 @@ with col_a:
     select_all_clicked = st.button("✅ 全选", use_container_width=True)
 with col_b:
     deselect_all_clicked = st.button("❌ 全部取消", use_container_width=True)
-with col_c:
-    st.metric("已选择", f"{len(st.session_state.owned)} / {len(roster)}")
 
 # Applied before the checkboxes below are instantiated in this same run, so their
-# displayed state picks up the change immediately (setting a widget's session_state
-# value after it has already rendered in the same run is not allowed - before is fine).
+# displayed state - and the "已选择" metric - picks up the change immediately (setting
+# a widget's session_state value after it has already rendered in the same run is not
+# allowed - before is fine).
 if select_all_clicked:
     st.session_state.owned = set(roster)
     for name in roster:
         st.session_state[_widget_key(name)] = True
-    save_owned_characters(st.session_state.owned)
+    save_owned_characters(user_id, st.session_state.owned)
 elif deselect_all_clicked:
     st.session_state.owned = set()
     for name in roster:
         st.session_state[_widget_key(name)] = False
-    save_owned_characters(st.session_state.owned)
+    save_owned_characters(user_id, st.session_state.owned)
+
+with col_c:
+    st.metric("已选择", f"{len(st.session_state.owned)} / {len(roster)}")
 
 search = st.text_input("🔍 搜索角色", "").strip()
 filtered_roster = [c for c in roster if search in c] if search else roster
@@ -63,10 +63,18 @@ for idx, name in enumerate(filtered_roster):
         if avatar_path:
             st.image(avatar_path, width=64)
         key = _widget_key(name)
-        checked = st.checkbox(name, value=name in st.session_state.owned, key=key)
+        if key not in st.session_state:
+            # First appearance of this widget this session - seed its initial value
+            # from the loaded `owned` set. Deliberately not also passing value= to
+            # st.checkbox below: doing so while select-all/deselect-all (above) also
+            # assign into this same key via the Session State API triggers Streamlit's
+            # "widget created with a default value but also had its value set via the
+            # Session State API" warning - session state alone should drive this widget.
+            st.session_state[key] = name in st.session_state.owned
+        checked = st.checkbox(name, key=key)
         if checked and name not in st.session_state.owned:
             st.session_state.owned.add(name)
-            save_owned_characters(st.session_state.owned)
+            save_owned_characters(user_id, st.session_state.owned)
         elif not checked and name in st.session_state.owned:
             st.session_state.owned.discard(name)
-            save_owned_characters(st.session_state.owned)
+            save_owned_characters(user_id, st.session_state.owned)

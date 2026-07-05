@@ -1,0 +1,19 @@
+# Template for .streamlit/auth_config.yaml (gitignored - contains password hashes and a
+# cookie signing secret, not something to commit). Copy this file to
+# .streamlit/auth_config.yaml, then add real users with:
+#
+#   python scripts/manage_users.py add <username> "<display name>"
+#
+# which will create the file if missing, hash the password with bcrypt, and generate a
+# random cookie key for you - you do not need to hand-edit the fields below yourself.
+
+credentials:
+  usernames:
+    alice:
+      name: Alice
+      password: $2b$12$REPLACE_WITH_A_REAL_BCRYPT_HASH_VIA_MANAGE_USERS_PY
+
+cookie:
+  name: ruyuan_auth
+  key: REPLACE_WITH_A_RANDOM_SECRET  # e.g. python -c "import secrets; print(secrets.token_hex(32))"
+  expiry_days: 30

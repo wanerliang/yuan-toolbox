@@ -2,22 +2,19 @@ from pathlib import Path
 
 import streamlit as st
 
+from utils.auth import require_login
 from utils.constants import SQUAD_SIZES, TARGETS, WEATHERS
-from utils.loader import (
-    load_buff_connections,
-    load_characters,
-    load_master_roster,
-    load_owned_characters,
-    load_used_pairs,
-    save_used_pairs,
-    used_pair_key,
-)
+from utils.db import load_owned_characters, load_used_pairs, save_used_pairs, used_pair_key
+from utils.loader import load_buff_connections, load_characters, load_master_roster
 from utils.rules import MODE_HIGHEST, MODE_UNMARKED, recommend_squads
 
 MODE_LABELS = {MODE_HIGHEST: "最高分", MODE_UNMARKED: "未标记优先"}
 WEATHER_ICON_DIR = Path("assets/weather")
 
 st.set_page_config(page_title="如鸢 突发情况 助手", page_icon="🎮", layout="wide")
+
+user_id = require_login()
+
 st.title("🎮 鸢报-突发情况 队伍推荐")
 st.caption("勾选你拥有的角色，选择当前突发情况的目标与天气，获取羁绊分数最高的队伍推荐。")
 
@@ -26,9 +23,9 @@ characters_df = load_characters()
 roster = load_master_roster(buff_df, characters_df)
 
 if "owned" not in st.session_state:
-    st.session_state.owned = load_owned_characters()
+    st.session_state.owned = load_owned_characters(user_id)
 if "used_pairs" not in st.session_state:
-    st.session_state.used_pairs = load_used_pairs()
+    st.session_state.used_pairs = load_used_pairs(user_id)
 if "selected_weather" not in st.session_state:
     st.session_state.selected_weather = WEATHERS[0]
 
@@ -49,7 +46,7 @@ with target_col:
     target = st.selectbox("目标", TARGETS)
 
 # Icons downloaded locally via scripts/download_weather_icons.py (source: the same wiki
-# page's 天气 column headers, see BUSINESS_REQUIREMENTS.md §6.1) so there's no runtime
+# page's 天气 column headers, see docs/data-model.md §6.1) so there's no runtime
 # dependency on the wiki being reachable.
 weather_cols = st.columns(len(WEATHERS))
 for w, col in zip(WEATHERS, weather_cols):
@@ -192,7 +189,7 @@ else:
                             st.session_state.used_pairs.add(key)
                         else:
                             st.session_state.used_pairs.discard(key)
-                        save_used_pairs(st.session_state.used_pairs)
+                        save_used_pairs(user_id, st.session_state.used_pairs)
 
 st.divider()
 with st.expander("📖 羁绊收集进度（成就用）"):
@@ -247,5 +244,5 @@ with st.expander("📖 羁绊收集进度（成就用）"):
                 st.session_state.used_pairs.discard(key)
             changed = True
     if changed:
-        save_used_pairs(st.session_state.used_pairs)
+        save_used_pairs(user_id, st.session_state.used_pairs)
         st.rerun()

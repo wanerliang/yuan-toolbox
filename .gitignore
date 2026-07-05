@@ -13,9 +13,23 @@ venv/
 # Claude Code harness session state - not project source.
 .claude/
 
-# Personal save-state (per §11/§6.2/§6.4 of BUSINESS_REQUIREMENTS.md) - not source data.
+# Per-user save-state (see docs/data-model.md §6.2/§6.4) - not source data.
+data/app.db
+data/app.db-wal
+data/app.db-shm
+
+# Deprecated single-shared save-state (pre-multi-user) - kept only until migrated via
+# scripts/migrate_json_to_db.py, see docs/data-model.md §6.2/§6.4.
 data/owned_characters.json
 data/used_pairs.json
+
+# Login accounts (usernames + bcrypt password hashes + cookie signing secret) - see
+# .streamlit/auth_config.yaml.example for the template and scripts/manage_users.py to manage users.
+.streamlit/auth_config.yaml
+
+# Streamlit's own secrets file (holds auth_config_yaml on a fresh deploy - see
+# utils/bootstrap.py::ensure_auth_config - and any other future secrets). Never commit this.
+.streamlit/secrets.toml
 
 # Scraped game art (character portraits, weather icons) - copyrighted game assets, not ours to
 # redistribute publicly. Regenerate locally via scripts/scrape_characters.py and

@@ -2,12 +2,12 @@ from itertools import combinations
 
 import pandas as pd
 
-from utils.loader import used_pair_key
+from utils.db import used_pair_key
 
 # Safety bound: if a single (目标, 天气) cell has more relevant characters than this,
 # only keep the highest-|value| combos until the relevant-character count is back under
 # the bound. Prevents the brute-force search below from exploding on a densely-connected
-# cell. See BUSINESS_REQUIREMENTS.md §8.
+# cell. See docs/business-rules.md §8.
 MAX_RELEVANT_CHARACTERS = 40
 
 MODE_HIGHEST = "highest"
@@ -31,12 +31,12 @@ def recommend_squads(
 ) -> dict:
     """Best squad_size-character squads from owned_characters for the given (目标, 天气).
 
-    Two scoring modes (BUSINESS_REQUIREMENTS.md §8.1):
+    Two scoring modes (docs/business-rules.md §8.1):
     - MODE_HIGHEST: standard score = sum of value_pct over every 羁绊 whose full member
       set is contained in the squad. `reverse=True` sorts this ascending instead of
       descending ("lowest score first").
     - MODE_UNMARKED: ranks by an *unmarked-only* score - 羁绊 already present in
-      `used_pairs` (§6.4) contribute 0 - surfacing squads that make the most *new*
+      `used_pairs` (docs/data-model.md §6.4) contribute 0 - surfacing squads that make the most *new*
       achievement progress. `reverse=True` here does NOT just sort that same score
       ascending (that would degenerate to ties at 0, dominated by unmarked debuffs, and
       not show what a user asking for "the opposite" actually expects). Instead it swaps

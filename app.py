@@ -1,15 +1,20 @@
 import streamlit as st
 
-from utils.loader import load_buff_connections, load_characters, load_master_roster, load_owned_characters
+from utils.auth import require_login
+from utils.db import load_owned_characters
+from utils.loader import load_buff_connections, load_characters, load_master_roster
 
 st.set_page_config(page_title="如鸢工具箱", page_icon="🎮", layout="wide")
+
+user_id = require_login()
+
 st.title("🎮 如鸢工具箱")
 st.caption("选择下面的工具开始，或使用左侧菜单在页面间切换。")
 
 buff_df = load_buff_connections()
 characters_df = load_characters()
 roster = load_master_roster(buff_df, characters_df)
-owned = load_owned_characters()
+owned = load_owned_characters(user_id)
 
 col1, col2 = st.columns(2)
 
